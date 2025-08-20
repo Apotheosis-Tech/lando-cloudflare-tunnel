@@ -1,0 +1,9 @@
+# Git attributes for Lando Cloudflare Tunnel Integration
+# Ensure shell scripts maintain executable permissions
+
+*.sh text eol=lf
+install.sh text eol=lf
+
+# Set executable permissions for key scripts
+install.sh binary
+scripts/*.sh binary

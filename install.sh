@@ -5,6 +5,14 @@
 
 set -e
 
+# Check if script is executable
+if [ ! -x "$0" ]; then
+    echo "⚠️  Script not executable. Fixing permissions..."
+    chmod +x "$0"
+    echo "✅ Permissions fixed. Please run again: $0 $@"
+    exit 1
+fi
+
 echo "🚀 Lando Cloudflare Tunnel Integration Installer"
 echo "================================================"
 

@@ -32,6 +32,7 @@ A complete solution for integrating **Cloudflare Tunnels** with **Lando** develo
 # Clone and install in one command
 git clone https://github.com/Apotheosis-Tech/lando-cloudflare-tunnel.git
 cd lando-cloudflare-tunnel
+chmod +x install.sh  # Make installer executable
 ./install.sh /path/to/your/lando/project
 ```
 
