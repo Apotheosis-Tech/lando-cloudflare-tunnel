@@ -262,7 +262,7 @@ MIT License - see LICENSE file for details.
 
 ## 🙏 **Credits**
 
-- **Created by**: [Joe](https://github.com/Apotheosis-Tech) with AI assistance from Claude (Anthropic)
+- **Created by**: [Joe Stramel](https://github.com/Apotheosis-Tech) with AI assistance from Claude (Anthropic)
 - **Battle-tested during**: Real Facebook OAuth integration debugging
 - **Key breakthrough**: Discovering localhost:PORT vs *.lndo.site reliability issues
 - [Cloudflare](https://cloudflare.com) for providing free tunnels
