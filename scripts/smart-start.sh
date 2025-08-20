@@ -167,16 +167,30 @@ fi
 echo "🔍 Detecting Lando protocol..."
 LOCAL_SERVICE=""
 
-# Test HTTP first
-if curl -s -I --max-time 5 "http://localhost:$LANDO_PORT" > /dev/null 2>&1; then
-    LOCAL_SERVICE="http://localhost:$LANDO_PORT"
-    echo "✅ Using HTTP: $LOCAL_SERVICE"
-elif curl -s -I -k --max-time 5 "https://localhost:$LANDO_PORT" > /dev/null 2>&1; then
+# Test HTTPS first (Lando often uses HTTPS on higher ports)
+HTTPS_TEST=$(curl -s -I -k --max-time 5 "https://localhost:$LANDO_PORT" 2>&1 || true)
+HTTP_TEST=$(curl -s -I --max-time 5 "http://localhost:$LANDO_PORT" 2>&1 || true)
+
+# Check if HTTPS returns a proper HTTP response (not SSL error)
+if echo "$HTTPS_TEST" | grep -q "HTTP/"; then
     LOCAL_SERVICE="https://localhost:$LANDO_PORT"
     echo "✅ Using HTTPS: $LOCAL_SERVICE"
-else
-    echo "⚠️  Neither HTTP nor HTTPS responding. Using HTTP anyway..."
+# Check if HTTP returns a proper response (and not SSL error)
+elif echo "$HTTP_TEST" | grep -q "HTTP/" && ! echo "$HTTP_TEST" | grep -q "SSL"; then
     LOCAL_SERVICE="http://localhost:$LANDO_PORT"
+    echo "✅ Using HTTP: $LOCAL_SERVICE"
+else
+    echo "⚠️  Could not detect protocol clearly. Port $LANDO_PORT responses:"
+    echo "   HTTPS test: $(echo "$HTTPS_TEST" | head -1)"
+    echo "   HTTP test: $(echo "$HTTP_TEST" | head -1)"
+    # Default to HTTPS for higher ports (typical Lando pattern)
+    if [ "$LANDO_PORT" -gt 54570 ]; then
+        LOCAL_SERVICE="https://localhost:$LANDO_PORT"
+        echo "✅ Defaulting to HTTPS for high port: $LOCAL_SERVICE"
+    else
+        LOCAL_SERVICE="http://localhost:$LANDO_PORT"
+        echo "✅ Defaulting to HTTP for low port: $LOCAL_SERVICE"
+    fi
 fi
 
 # Create/update tunnel configuration

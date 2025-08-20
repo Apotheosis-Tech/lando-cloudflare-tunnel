@@ -82,6 +82,51 @@ else
     exit 1
 fi
 
+# Detect protocol and service URL
+echo "🔍 Detecting service protocol..."
+LOCAL_SERVICE=""
+
+# Test both localhost port and Lando site approaches
+if [ -n "$LANDO_PORT" ]; then
+    # Test HTTPS first (Lando often uses HTTPS on higher ports)
+    HTTPS_TEST=$(curl -s -I -k --max-time 5 "https://localhost:$LANDO_PORT" 2>&1 || true)
+    HTTP_TEST=$(curl -s -I --max-time 5 "http://localhost:$LANDO_PORT" 2>&1 || true)
+    
+    # Check if HTTPS returns a proper HTTP response (not SSL error)
+    if echo "$HTTPS_TEST" | grep -q "HTTP/"; then
+        LOCAL_SERVICE="https://localhost:$LANDO_PORT"
+        echo "✅ Using HTTPS localhost: $LOCAL_SERVICE"
+    # Check if HTTP returns a proper response (and not SSL error)
+    elif echo "$HTTP_TEST" | grep -q "HTTP/" && ! echo "$HTTP_TEST" | grep -q "SSL"; then
+        LOCAL_SERVICE="http://localhost:$LANDO_PORT"
+        echo "✅ Using HTTP localhost: $LOCAL_SERVICE"
+    # Default to HTTPS for higher ports (typical Lando pattern)
+    elif [ "$LANDO_PORT" -gt 54570 ]; then
+        LOCAL_SERVICE="https://localhost:$LANDO_PORT"
+        echo "✅ Defaulting to HTTPS for high port: $LOCAL_SERVICE"
+    else
+        LOCAL_SERVICE="http://localhost:$LANDO_PORT"
+        echo "✅ Defaulting to HTTP for low port: $LOCAL_SERVICE"
+    fi
+else
+    # Fallback to Lando site URL if port detection failed
+    # Test HTTPS first for Lando site
+    HTTPS_SITE_TEST=$(curl -s -I -k --max-time 5 "https://$LANDO_SITE" 2>&1 || true)
+    HTTP_SITE_TEST=$(curl -s -I --max-time 5 "http://$LANDO_SITE" 2>&1 || true)
+    
+    if echo "$HTTPS_SITE_TEST" | grep -q "HTTP/"; then
+        LOCAL_SERVICE="https://$LANDO_SITE"
+        echo "✅ Using HTTPS Lando site: $LOCAL_SERVICE"
+    elif echo "$HTTP_SITE_TEST" | grep -q "HTTP/"; then
+        LOCAL_SERVICE="http://$LANDO_SITE"
+        echo "✅ Using HTTP Lando site: $LOCAL_SERVICE"
+    else
+        # Default fallback
+        LOCAL_SERVICE="http://$LANDO_SITE"
+        echo "⚠️  Protocol detection failed, using HTTP fallback: $LOCAL_SERVICE"
+    fi
+fi
+
 # Update tunnel configuration
 CONFIG_DIR="$HOME/.cloudflared"
 CONFIG_FILE="$CONFIG_DIR/config.yml"
@@ -93,7 +138,7 @@ credentials-file: $CONFIG_DIR/$TUNNEL_ID.json
 
 ingress:
   - hostname: $EXTERNAL_DOMAIN
-    service: http://$LANDO_SITE
+    service: $LOCAL_SERVICE
     originRequest:
       noTLSVerify: true
   - service: http_status:404
@@ -131,7 +176,7 @@ if ps -p $TUNNEL_PID > /dev/null; then
     echo "   Test tunnel: curl -I https://$EXTERNAL_DOMAIN"
     echo ""
     echo "🎉 Development environment ready!"
-    echo "   Local: http://$LANDO_SITE"
+    echo "   Local Service: $LOCAL_SERVICE"
     echo "   External: https://$EXTERNAL_DOMAIN"
 else
     echo "❌ Tunnel failed to start. Check logs:"

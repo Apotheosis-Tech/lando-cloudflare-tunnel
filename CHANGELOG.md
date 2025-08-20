@@ -5,6 +5,29 @@ All notable changes to the Lando Cloudflare Tunnel Integration will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-08-20
+
+### Fixed
+- **CRITICAL**: Fixed "speaking plain HTTP to SSL-enabled server port" errors
+- **Enhanced Protocol Detection**: Improved HTTP/HTTPS detection logic in both `smart-start.sh` and `start-background.sh`
+- **Robust Port Detection**: Better handling of Lando's mixed HTTP/HTTPS port assignments
+- **SSL Error Prevention**: Added proper SSL error detection to avoid false positives
+- **High Port HTTPS Default**: Automatically defaults to HTTPS for ports above 54570 (typical Lando HTTPS ports)
+- **Better Debugging**: Enhanced error messages show actual curl responses for easier troubleshooting
+
+### Technical Details
+- Protocol detection now captures and analyzes actual HTTP response headers vs exit codes
+- Tests HTTPS first since Lando commonly uses HTTPS on higher numbered ports  
+- Prevents "SSL-enabled server port" errors by correctly matching protocol to port
+- Fallback logic uses port number heuristics when response detection fails
+- Compatible with both localhost port and Lando site URL approaches
+
+### Impact
+- Eliminates the most common tunnel connectivity error
+- Provides stable tunnel connections regardless of Lando's port assignment
+- Reduces debugging time for new project setups
+- Ensures OAuth integrations work consistently
+
 ## [1.1.0] - 2025-08-20
 
 ### Added
