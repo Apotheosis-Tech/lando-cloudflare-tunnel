@@ -1,0 +1,453 @@
+#!/bin/bash
+
+# =============================================================================
+# Project Launcher Template
+# Copy this to your project root as 'dev' (or any name you prefer)
+# Provides convenient access to all project operations from the root directory
+# 
+# This template is part of the lando-cloudflare-tunnel package
+# Customize the commands below for your specific project needs
+# =============================================================================
+
+set -e
+
+# Get the directory where this script is located (project root)
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TUNNEL_DIR="$PROJECT_ROOT/tunnel"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${GREEN}✅${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}❌${NC} $1"
+}
+
+print_info() {
+    echo -e "${BLUE}ℹ️${NC} $1"
+}
+
+# Function to show usage
+show_usage() {
+    echo "🚀 Project Launcher"
+    echo "==================="
+    echo ""
+    echo "Usage: ./dev <command> [options]"
+    echo ""
+    echo "📦 Lando Commands:"
+    echo "  start              Start Lando services"
+    echo "  stop               Stop Lando services"
+    echo "  restart            Restart Lando services"
+    echo "  info               Show Lando service info"
+    echo "  logs [service]     Show logs for service (default: appserver)"
+    echo "  ssh [service]      SSH into service (default: appserver)"
+    echo ""
+    echo "🌐 Tunnel Commands:"
+    echo "  tunnel             Start tunnel (foreground)"
+    echo "  tunnel-bg          Start tunnel in background"
+    echo "  tunnel-stop        Stop tunnel"
+    echo "  tunnel-status      Check tunnel status"
+    echo "  tunnel-health      Run tunnel health check"
+    echo ""
+    echo "🗃️ Database Commands:"
+    echo "  db-export          Export database"
+    echo "  db-import <file>   Import database from file"
+    echo "  db-backup          Create database backup"
+    echo ""
+    echo "🧹 Drupal Commands (customize for your CMS):"
+    echo "  cache-clear        Clear cache"
+    echo "  config-export      Export configuration"
+    echo "  config-import      Import configuration"
+    echo "  update             Run database updates"
+    echo ""
+    echo "🔧 Development Commands:"
+    echo "  composer <args>    Run composer commands"
+    echo "  drush <args>       Run Drush commands (Drupal)"
+    echo "  npm <args>         Run npm commands"
+    echo ""
+    echo "🎯 Quick Actions:"
+    echo "  full-start         Start Lando + Tunnel"
+    echo "  status             Show complete project status"
+    echo "  setup              Initial project setup"
+    echo ""
+    echo "Examples:"
+    echo "  ./dev start                    # Start Lando"
+    echo "  ./dev full-start              # Start Lando + Tunnel"
+    echo "  ./dev drush cr                # Clear cache (Drupal)"
+    echo "  ./dev tunnel-status           # Check tunnel status"
+    echo "  ./dev db-import backup.sql    # Import database"
+    echo ""
+}
+
+# Function to check if Lando is running
+check_lando() {
+    if lando info >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function to ensure Lando is running
+ensure_lando() {
+    if ! check_lando; then
+        print_info "Starting Lando..."
+        lando start
+    fi
+}
+
+# Main command processing
+case "${1:-help}" in
+    # Help/Usage
+    help|--help|-h|"")
+        show_usage
+        ;;
+    
+    # Lando Commands
+    start)
+        print_info "Starting Lando services..."
+        lando start
+        print_status "Lando started successfully"
+        ;;
+    
+    stop)
+        print_info "Stopping Lando services..."
+        lando stop
+        print_status "Lando stopped successfully"
+        ;;
+    
+    restart)
+        print_info "Restarting Lando services..."
+        lando restart
+        print_status "Lando restarted successfully"
+        ;;
+    
+    info)
+        lando info
+        ;;
+    
+    logs)
+        SERVICE="${2:-appserver}"
+        print_info "Showing logs for $SERVICE..."
+        lando logs -s "$SERVICE" -f
+        ;;
+    
+    ssh)
+        ensure_lando
+        SERVICE="${2:-appserver}"
+        print_info "SSH into $SERVICE..."
+        lando ssh -s "$SERVICE"
+        ;;
+    
+    # Tunnel Commands
+    tunnel)
+        ensure_lando
+        print_info "Starting tunnel (foreground)..."
+        if [ -f "$TUNNEL_DIR/smart-start.sh" ]; then
+            cd "$TUNNEL_DIR"
+            ./smart-start.sh
+        else
+            print_error "Tunnel script not found at $TUNNEL_DIR/smart-start.sh"
+            print_info "Make sure you've installed the lando-cloudflare-tunnel package"
+            exit 1
+        fi
+        ;;
+    
+    tunnel-bg)
+        ensure_lando
+        print_info "Starting tunnel in background..."
+        if [ -f "$TUNNEL_DIR/start-background.sh" ]; then
+            cd "$TUNNEL_DIR"
+            ./start-background.sh
+        else
+            print_error "Background tunnel script not found"
+            exit 1
+        fi
+        ;;
+    
+    tunnel-stop)
+        print_info "Stopping tunnel..."
+        if [ -f "$TUNNEL_DIR/stop-tunnel.sh" ]; then
+            cd "$TUNNEL_DIR"
+            ./stop-tunnel.sh
+        else
+            print_error "Stop tunnel script not found"
+            exit 1
+        fi
+        ;;
+    
+    tunnel-status)
+        if [ -f "$TUNNEL_DIR/tunnel-status.sh" ]; then
+            cd "$TUNNEL_DIR"
+            ./tunnel-status.sh
+        else
+            print_error "Tunnel status script not found"
+            exit 1
+        fi
+        ;;
+    
+    tunnel-health)
+        if [ -f "$TUNNEL_DIR/health-check.sh" ]; then
+            cd "$TUNNEL_DIR"
+            ./health-check.sh
+        else
+            print_error "Health check script not found"
+            exit 1
+        fi
+        ;;
+    
+    # Database Commands
+    db-export)
+        ensure_lando
+        print_info "Exporting database..."
+        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+        FILENAME="db_export_${TIMESTAMP}.sql"
+        lando db-export "$FILENAME"
+        print_status "Database exported to $FILENAME"
+        ;;
+    
+    db-import)
+        if [ -z "$2" ]; then
+            print_error "Please specify a database file to import"
+            echo "Usage: ./dev db-import <filename>"
+            exit 1
+        fi
+        ensure_lando
+        print_info "Importing database from $2..."
+        lando db-import "$2"
+        print_status "Database imported successfully"
+        ;;
+    
+    db-backup)
+        ensure_lando
+        print_info "Creating database backup..."
+        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+        BACKUP_DIR="$PROJECT_ROOT/db_exports"
+        mkdir -p "$BACKUP_DIR"
+        FILENAME="$BACKUP_DIR/backup_${TIMESTAMP}.sql"
+        lando db-export "$FILENAME"
+        print_status "Database backup created: $FILENAME"
+        ;;
+    
+    # Framework-specific Commands (customize these for your needs)
+    cache-clear|cc)
+        ensure_lando
+        print_info "Clearing cache..."
+        # Drupal
+        if command -v lando drush &> /dev/null; then
+            lando drush cr
+        # Laravel
+        elif [ -f "artisan" ]; then
+            lando php artisan cache:clear
+        # Symfony
+        elif [ -f "bin/console" ]; then
+            lando php bin/console cache:clear
+        # WordPress
+        elif command -v lando wp &> /dev/null; then
+            lando wp cache flush
+        else
+            print_warning "No recognized cache clear command found"
+            print_info "Customize this command in the script for your framework"
+        fi
+        print_status "Cache cleared successfully"
+        ;;
+    
+    config-export|cex)
+        ensure_lando
+        print_info "Exporting configuration..."
+        # Drupal
+        if command -v lando drush &> /dev/null; then
+            lando drush cex -y
+        else
+            print_warning "Configuration export not configured for this framework"
+            print_info "Customize this command in the script for your framework"
+        fi
+        print_status "Configuration exported successfully"
+        ;;
+    
+    config-import|cim)
+        ensure_lando
+        print_info "Importing configuration..."
+        # Drupal
+        if command -v lando drush &> /dev/null; then
+            lando drush cim -y
+        else
+            print_warning "Configuration import not configured for this framework"
+            print_info "Customize this command in the script for your framework"
+        fi
+        print_status "Configuration imported successfully"
+        ;;
+    
+    update|updb)
+        ensure_lando
+        print_info "Running database updates..."
+        # Drupal
+        if command -v lando drush &> /dev/null; then
+            lando drush updb -y
+        # Laravel
+        elif [ -f "artisan" ]; then
+            lando php artisan migrate
+        else
+            print_warning "Database update not configured for this framework"
+            print_info "Customize this command in the script for your framework"
+        fi
+        print_status "Database updates completed"
+        ;;
+    
+    # Development Commands
+    composer)
+        ensure_lando
+        shift # Remove 'composer' from arguments
+        print_info "Running composer $*..."
+        lando composer "$@"
+        ;;
+    
+    drush)
+        ensure_lando
+        shift # Remove 'drush' from arguments
+        print_info "Running drush $*..."
+        lando drush "$@"
+        ;;
+    
+    wp)
+        ensure_lando
+        shift # Remove 'wp' from arguments
+        print_info "Running wp-cli $*..."
+        lando wp "$@"
+        ;;
+    
+    artisan)
+        ensure_lando
+        shift # Remove 'artisan' from arguments
+        print_info "Running artisan $*..."
+        lando php artisan "$@"
+        ;;
+    
+    npm)
+        ensure_lando
+        shift # Remove 'npm' from arguments
+        print_info "Running npm $*..."
+        lando npm "$@"
+        ;;
+    
+    yarn)
+        ensure_lando
+        shift # Remove 'yarn' from arguments
+        print_info "Running yarn $*..."
+        lando yarn "$@"
+        ;;
+    
+    # Quick Actions
+    full-start)
+        print_info "Starting complete development environment..."
+        print_info "Step 1: Starting Lando..."
+        lando start
+        print_status "Lando started"
+        
+        print_info "Step 2: Starting tunnel..."
+        if [ -f "$TUNNEL_DIR/start-background.sh" ]; then
+            cd "$TUNNEL_DIR"
+            ./start-background.sh
+            print_status "Tunnel started in background"
+        else
+            print_warning "Background tunnel script not found, starting tunnel in foreground..."
+            if [ -f "$TUNNEL_DIR/smart-start.sh" ]; then
+                cd "$TUNNEL_DIR"
+                ./smart-start.sh
+            else
+                print_error "No tunnel scripts found. Make sure lando-cloudflare-tunnel is installed."
+            fi
+        fi
+        ;;
+    
+    status)
+        echo "🎯 Project Status"
+        echo "================"
+        echo ""
+        
+        # Lando Status
+        if check_lando; then
+            print_status "Lando is running"
+            echo ""
+            lando info --format table
+        else
+            print_warning "Lando is not running"
+        fi
+        
+        echo ""
+        
+        # Tunnel Status
+        if [ -f "$TUNNEL_DIR/tunnel-status.sh" ]; then
+            echo "🌐 Tunnel Status:"
+            cd "$TUNNEL_DIR"
+            ./tunnel-status.sh
+        else
+            print_warning "Cannot check tunnel status - lando-cloudflare-tunnel not installed"
+        fi
+        ;;
+    
+    setup)
+        print_info "Setting up project..."
+        
+        # Start Lando
+        print_info "Starting Lando..."
+        lando start
+        
+        # Install dependencies
+        print_info "Installing dependencies..."
+        if [ -f "composer.json" ]; then
+            lando composer install
+        fi
+        
+        if [ -f "package.json" ]; then
+            lando npm install
+        fi
+        
+        # Framework-specific setup
+        print_info "Running framework-specific setup..."
+        
+        # Drupal
+        if [ -f "web/sites/default/settings.php" ] || [ -f "sites/default/settings.php" ]; then
+            print_info "Detected Drupal project"
+            # Add Drupal-specific setup here
+        fi
+        
+        # Laravel
+        if [ -f "artisan" ]; then
+            print_info "Detected Laravel project"
+            # Add Laravel-specific setup here
+        fi
+        
+        # WordPress
+        if [ -f "wp-config.php" ] || [ -f "wp-config-sample.php" ]; then
+            print_info "Detected WordPress project"
+            # Add WordPress-specific setup here
+        fi
+        
+        print_status "Setup completed!"
+        print_info "Next steps:"
+        echo "  - Use './dev tunnel' to start the tunnel"
+        echo "  - Use './dev full-start' to start everything at once"
+        echo "  - Use './dev help' to see all available commands"
+        ;;
+    
+    # Unknown command
+    *)
+        print_error "Unknown command: $1"
+        echo ""
+        show_usage
+        exit 1
+        ;;
+esac

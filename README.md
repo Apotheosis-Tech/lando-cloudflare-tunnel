@@ -62,15 +62,20 @@ lando-cloudflare-tunnel/
 │   └── setup-domain.sh    # Interactive domain configuration
 ├── examples/          # Configuration templates
 │   ├── config-example.yml
-│   └── drupal-settings-example.php
+│   ├── drupal-settings-example.php
+│   ├── project-launcher   # Comprehensive project launcher template
+│   └── README.md          # Examples documentation
 ├── docs/              # Documentation
 │   ├── TROUBLESHOOTING.md
 │   ├── CONTRIBUTING.md
 │   └── LANDO_EXAMPLES.md
+├── tunnel             # Global tunnel launcher
 └── install.sh         # One-command installer
 ```
 
 ## 📋 **Commands**
+
+### Option 1: Individual Tunnel Commands
 
 After installation, navigate to the tunnel directory in your project:
 
@@ -86,6 +91,37 @@ cd tunnel/  # or wherever you installed the scripts
 | `./tunnel-status.sh` | Check if tunnel is running |
 | `./health-check.sh` | Test connectivity |
 | `./setup-domain.sh` | Configure domain settings |
+
+### Option 2: Global Tunnel Launcher
+
+Run tunnel commands from anywhere in your project using the global launcher:
+
+```bash
+tunnel           # Start tunnel (same as tunnel start)
+tunnel bg        # Start in background  
+tunnel status    # Check status
+tunnel stop      # Stop tunnel
+tunnel help      # Show help
+```
+
+### Option 3: Complete Project Launcher (Recommended)
+
+For the ultimate convenience, copy the project launcher template to your project root:
+
+```bash
+# Copy the template
+cp examples/project-launcher /path/to/your/project/dev
+chmod +x dev
+
+# Now use one script for everything:
+./dev full-start              # Start Lando + Tunnel
+./dev tunnel-status          # Check tunnel status  
+./dev drush cr               # Clear cache (Drupal)
+./dev db-backup              # Database backup
+./dev status                 # Complete project status
+```
+
+The project launcher provides a single command interface for all development operations, making your workflow much more efficient. See `examples/README.md` for full documentation.
 
 ### First Time Setup
 

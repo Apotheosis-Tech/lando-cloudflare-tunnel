@@ -5,6 +5,30 @@ All notable changes to the Lando Cloudflare Tunnel Integration will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-08-20
+
+### Added
+- **Project Launcher Template**: Complete project management script template (`examples/project-launcher`)
+- **Enhanced Examples Directory**: Added README.md with comprehensive documentation for all templates
+- **Framework-Agnostic Commands**: Project launcher supports Drupal, Laravel, WordPress, Symfony automatically
+- **Workflow Improvements**: Single command (`./dev full-start`) to start Lando + Tunnel together
+- **Smart Lando Management**: Automatically starts Lando when needed for tunnel and other commands
+- **Development Commands**: Unified interface for composer, drush, wp-cli, artisan, npm commands
+- **Database Operations**: Quick backup, import, export commands with timestamped filenames
+- **Status Dashboard**: Complete project status view showing Lando and tunnel health
+
+### Enhanced
+- **Global Tunnel Launcher**: Improved documentation and usage examples
+- **README.md**: Added three-tier command structure (individual, global, project launcher)
+- **User Experience**: Colored output and better error messages in project launcher
+- **Installation Options**: Clear guidance on which approach works best for different needs
+
+### Benefits
+- **Convenience**: Replaces `lando start && ./tunnel/tunnel` with single `./dev full-start` command
+- **Consistency**: Same command interface across all projects and team members
+- **Flexibility**: Choose between focused tunnel commands or comprehensive project management
+- **Framework Support**: Works with any PHP framework, CMS, or custom application
+
 ## [1.0.1] - 2025-08-20
 
 ### Fixed
@@ -74,15 +98,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Planned Features for Future Releases]
 
-### [1.1.0] - Planned
-- Docker Compose support
+### [1.2.0] - Planned
+- Docker Compose support (without Lando)
 - Advanced load balancing configurations
 - Multiple domain support per project
 - Webhook integration for automated deployments
 - CI/CD pipeline examples
 - Prometheus metrics integration
 
-### [1.2.0] - Planned  
+### [1.3.0] - Planned  
 - GUI management interface
 - Visual tunnel status dashboard
 - Automated SSL certificate management

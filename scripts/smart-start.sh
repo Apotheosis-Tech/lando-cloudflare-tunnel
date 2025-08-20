@@ -17,9 +17,6 @@ TUNNEL_NAME="your-project-dev"
 # Your external domain (must be managed by Cloudflare)
 EXTERNAL_DOMAIN="your-project.your-domain.com"
 
-# Your Lando site URL (typically yourproject.lndo.site)
-LANDO_SITE="yourproject.lndo.site"
-
 # Path to your Lando project (current directory by default)
 PROJECT_PATH="$(pwd)"
 
@@ -31,7 +28,7 @@ echo "🚀 Smart Cloudflare Tunnel Starter"
 echo "=================================="
 echo "Project: $TUNNEL_NAME"
 echo "External URL: https://$EXTERNAL_DOMAIN"
-echo "Local Site: http://$LANDO_SITE"
+echo "Auto-detecting local service..."
 echo ""
 
 # Change to project directory
