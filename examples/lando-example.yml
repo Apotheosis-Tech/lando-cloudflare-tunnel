@@ -1,0 +1,97 @@
+# Example .lando.yml for Cloudflare Tunnel Integration
+# This shows how to configure your Lando project to work optimally with tunnels
+
+name: your-project-name
+
+# Recipe configuration
+recipe: drupal10  # or drupal9, wordpress, laravel, etc.
+
+# Configuration options
+config:
+  webroot: web
+  php: 8.2
+  database: mariadb:10.6
+  # Set a specific port for consistency (optional)
+  # appserver_port: 8080
+
+# Services configuration
+services:
+  appserver:
+    # Ensure localhost connections work properly
+    build_as_root:
+      - apt-get update -y
+      - apt-get install -y curl
+    overrides:
+      environment:
+        # Set consistent environment for tunnel integration
+        TUNNEL_READY: "true"
+        # Optional: Set specific port
+        # HTTP_PORT: 8080
+
+  database:
+    type: mariadb:10.6
+
+# Proxy configuration (optional - for custom domains)
+proxy:
+  appserver:
+    # Keep the default lndo.site working for local dev
+    - your-project.lndo.site
+    # The tunnel will provide the external domain
+
+# Tooling for tunnel management
+tooling:
+  tunnel-start:
+    service: appserver
+    cmd: 
+      - cd /app/tunnel && ./smart-start.sh
+    description: Start Cloudflare tunnel
+  
+  tunnel-stop:
+    service: appserver
+    cmd:
+      - cd /app/tunnel && ./stop-tunnel.sh
+    description: Stop Cloudflare tunnel
+  
+  tunnel-status:
+    service: appserver
+    cmd:
+      - cd /app/tunnel && ./tunnel-status.sh
+    description: Check tunnel status
+  
+  tunnel-health:
+    service: appserver
+    cmd:
+      - cd /app/tunnel && ./health-check.sh
+    description: Run tunnel health check
+
+# Events (optional - auto-start tunnel)
+events:
+  # Uncomment to auto-start tunnel when Lando starts
+  # post-start:
+  #   - appserver: cd /app/tunnel && ./start-background.sh
+  
+  # Uncomment to auto-stop tunnel when Lando stops
+  # pre-stop:
+  #   - appserver: cd /app/tunnel && ./stop-tunnel.sh
+
+# Build steps (optional)
+build:
+  # Install tunnel scripts during lando rebuild
+  # - "cd /app && curl -sSL https://raw.githubusercontent.com/Apotheosis-Tech/lando-cloudflare-tunnel/main/install.sh | bash"
+
+# Environment variables
+env:
+  # Set base URL for applications that need it
+  APP_URL: "https://your-project.your-domain.com"
+  # Drupal-specific
+  DRUPAL_BASE_URL: "https://your-project.your-domain.com"
+  # Laravel-specific
+  APP_ENV: local
+  APP_DEBUG: true
+
+# Notes for tunnel integration:
+# 1. The tunnel scripts should be in a 'tunnel/' directory in your project root
+# 2. Update smart-start.sh with your actual domain
+# 3. Make sure cloudflared is installed on your host machine (not in container)
+# 4. Configure your OAuth apps to use the tunnel domain
+# 5. Use 'lando tunnel-start' for easy tunnel management

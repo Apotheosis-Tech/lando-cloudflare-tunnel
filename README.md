@@ -4,6 +4,8 @@
 
 A complete solution for integrating **Cloudflare Tunnels** with **Lando** development environments. Get stable, permanent external URLs for your local development - no more random ngrok URLs that break your OAuth callbacks!
 
+> **⚠️ Maintenance Notice**: This project is minimally maintained. It's production-ready and battle-tested, but expect infrequent updates. Community contributions are welcome!
+
 ## 🎯 **Why Use This?**
 
 - ✅ **Stable URLs** - Your external URL never changes
@@ -25,7 +27,68 @@ A complete solution for integrating **Cloudflare Tunnels** with **Lando** develo
 
 ### Installation
 
-1. **Install cloudflared:**
+**Option 1: Quick Install (Recommended)**
+```bash
+# Clone and install in one command
+git clone https://github.com/Apotheosis-Tech/lando-cloudflare-tunnel.git
+cd lando-cloudflare-tunnel
+./install.sh /path/to/your/lando/project
+```
+
+**Option 2: Manual Install**
+```bash
+# Clone the repository
+git clone https://github.com/Apotheosis-Tech/lando-cloudflare-tunnel.git
+
+# Copy scripts to your Lando project
+cp scripts/* /path/to/your/lando/project/tunnel/
+chmod +x /path/to/your/lando/project/tunnel/*.sh
+
+# Copy configuration examples
+cp examples/* /path/to/your/lando/project/tunnel/
+```
+
+## 📁 **What's Included**
+
+```
+lando-cloudflare-tunnel/
+├── scripts/           # Executable scripts
+│   ├── smart-start.sh     # Auto-detects port and starts tunnel
+│   ├── start-background.sh # Background tunnel with logging
+│   ├── stop-tunnel.sh     # Stop tunnel and optionally Lando
+│   ├── tunnel-status.sh   # Check tunnel health
+│   ├── health-check.sh    # Comprehensive connectivity testing
+│   └── setup-domain.sh    # Interactive domain configuration
+├── examples/          # Configuration templates
+│   ├── config-example.yml
+│   └── drupal-settings-example.php
+├── docs/              # Documentation
+│   ├── TROUBLESHOOTING.md
+│   ├── CONTRIBUTING.md
+│   └── LANDO_EXAMPLES.md
+└── install.sh         # One-command installer
+```
+
+## 📋 **Commands**
+
+After installation, navigate to the tunnel directory in your project:
+
+```bash
+cd tunnel/  # or wherever you installed the scripts
+```
+
+| Command | Purpose |
+|---------|----------|
+| `./smart-start.sh` | Start tunnel (interactive, shows logs) |
+| `./start-background.sh` | Start tunnel in background |
+| `./stop-tunnel.sh` | Stop tunnel |
+| `./tunnel-status.sh` | Check if tunnel is running |
+| `./health-check.sh` | Test connectivity |
+| `./setup-domain.sh` | Configure domain settings |
+
+### First Time Setup
+
+1. **Install prerequisites:**
    ```bash
    # macOS
    brew install cloudflared
@@ -40,39 +103,16 @@ A complete solution for integrating **Cloudflare Tunnels** with **Lando** develo
    cloudflared tunnel login
    ```
 
-3. **Copy the scripts to your Lando project:**
+3. **Configure your domain:**
    ```bash
-   # Copy all shell scripts to your Lando project root
-   cp *.sh /path/to/your/lando/project/
-   chmod +x *.sh
+   ./setup-domain.sh  # Interactive configuration
+   # OR edit smart-start.sh manually
    ```
 
-4. **Configure your domain:**
-   Edit the scripts and replace `your-project.your-domain.com` with your desired subdomain.
-
-5. **Start your tunnel:**
+4. **Start your tunnel:**
    ```bash
    ./smart-start.sh
    ```
-
-## 📁 **What's Included**
-
-### Core Scripts
-
-- **`smart-start.sh`** - Auto-detects Lando port and starts tunnel (interactive)
-- **`start-background.sh`** - Runs tunnel in background with logging
-- **`stop-tunnel.sh`** - Stops tunnel and optionally Lando
-- **`tunnel-status.sh`** - Check tunnel status and health
-
-### Configuration
-
-- **`settings-example.php`** - Drupal settings for reverse proxy
-- **`config-example.yml`** - Cloudflare tunnel configuration template
-
-### Utilities
-
-- **`setup-domain.sh`** - Interactive domain configuration
-- **`health-check.sh`** - Verify tunnel and local connectivity
 
 ## 🔧 **Configuration**
 
@@ -106,11 +146,29 @@ $base_url = 'https://your-project.your-domain.com';
 
 ### 3. OAuth Configuration
 
-Perfect for OAuth applications! Your redirect URIs will be:
-```
+Perfect for OAuth applications! The package provides stable callback URLs for any OAuth provider:
+
+```bash
+# Generic OAuth callback patterns that work with any provider:
 https://your-project.your-domain.com/oauth/callback
-https://your-project.your-domain.com/auth/facebook/callback
+https://your-project.your-domain.com/auth/{provider}/callback
+https://your-project.your-domain.com/login/{provider}/callback
+https://your-project.your-domain.com/api/auth/{provider}/callback
+
+# Real-world examples for popular providers:
+https://your-project.your-domain.com/auth/facebook/callback    # Facebook OAuth
+https://your-project.your-domain.com/auth/google/callback      # Google OAuth  
+https://your-project.your-domain.com/auth/github/callback      # GitHub OAuth
+https://your-project.your-domain.com/auth/twitter/callback     # Twitter OAuth
+https://your-project.your-domain.com/oauth/discord/callback    # Discord OAuth
+https://your-project.your-domain.com/login/linkedin/callback   # LinkedIn OAuth
 ```
+
+**Why This Matters:**
+- ✅ **No More Broken Development** - Callback URLs never change
+- ✅ **Team Collaboration** - Everyone uses the same callback URLs
+- ✅ **Production Parity** - Same URL structure as production
+- ✅ **Multi-Provider Support** - Works with any OAuth provider
 
 ## 🛠️ **Advanced Usage**
 
@@ -141,20 +199,10 @@ Use in GitHub Actions or other CI systems:
 ```yaml
 - name: Start Cloudflare Tunnel
   run: |
+    cd tunnel/
     ./start-background.sh
     ./health-check.sh
 ```
-
-## 📋 **Commands Reference**
-
-| Command | Purpose |
-|---------|---------|
-| `./smart-start.sh` | Start tunnel (interactive, shows logs) |
-| `./start-background.sh` | Start tunnel in background |
-| `./stop-tunnel.sh` | Stop tunnel |
-| `./tunnel-status.sh` | Check if tunnel is running |
-| `./health-check.sh` | Test connectivity |
-| `./setup-domain.sh` | Configure domain settings |
 
 ## 🐛 **Troubleshooting**
 
@@ -189,6 +237,8 @@ nslookup your-project.your-domain.com
 curl -I https://your-project.your-domain.com
 ```
 
+For comprehensive troubleshooting, see: `docs/TROUBLESHOOTING.md`
+
 ## 🔒 **Security Notes**
 
 - Tunnels expose your local development to the internet
@@ -198,12 +248,12 @@ curl -I https://your-project.your-domain.com
 
 ## 🤝 **Contributing**
 
-Contributions welcome! Please:
+Contributions welcome! Please see `docs/CONTRIBUTING.md` for:
 
-1. Fork the repository
-2. Create a feature branch
-3. Test with multiple Lando configurations  
-4. Submit a pull request
+1. Code style and standards
+2. Testing requirements
+3. Documentation updates
+4. Feature request process
 
 ## 📄 **License**
 
@@ -211,11 +261,15 @@ MIT License - see LICENSE file for details.
 
 ## 🙏 **Credits**
 
+- **Created by**: [Joe](https://github.com/Apotheosis-Tech) with AI assistance from Claude (Anthropic)
+- **Battle-tested during**: Real Facebook OAuth integration debugging
+- **Key breakthrough**: Discovering localhost:PORT vs *.lndo.site reliability issues
 - [Cloudflare](https://cloudflare.com) for providing free tunnels
 - [Lando](https://lando.dev) for the amazing development platform
 - Community feedback and testing
 
+**Development Note**: This package was developed collaboratively between human expertise and AI assistance, combining real-world debugging experience with comprehensive automation.
+
 ---
 
 **⭐ Star this repo if it helps your development workflow!**
-# lando-cloudflare-tunnel
